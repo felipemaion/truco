@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-This is an example of pyCardDeck, it's not meant to be complete poker script,
-but rather a showcase of pyCardDeck's usage.
+This is a game: Truco Paulista.
+Author: Felipe Maion Garcia
+Language: Python 3
+Started: 31/jan/2018
 """
+#### NEEDED SETUP:
+#### pip install pyCardDeck
 
 import sys
 import pyCardDeck
