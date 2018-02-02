@@ -110,21 +110,49 @@ def generate_deck(sujo=True) -> List[TrucoCard]:
 
 
 class Player:
-
+#
     def __init__(self, name: str):
-        self.hand = []
+        self.hand = pyCardDeck.Deck(name=name, reshuffle=False)
         self.name = name
-
+#
     def __str__(self):
         return self.name
+
+
 
 class TrucoGame:
 
     def __init__(self, players: List[Player]):
         self.deck = pyCardDeck.Deck(generate_deck(),name="Truco Sujo", reshuffle=False)
+        if len(players) not in [2,4,6]:
+            raise("Erro: Precisa de 2, 4 ou 6 jogadores")
         self.players = players
+        self.teams = {}
+        team = 1
+        for player in players:
+            self.teams[player] = team
+            team += 1
+            if team > 2:
+                team = 1
+        print(self.teams)
+
         self.scores = {}
-        print("Jogo criado com {} jogadores.".format(len(self.players)))
+        self.gameround = {'score': 1, 'first_round': None, 'second_round':None, 'third_round': None, 'last_call':None}
+        print("Jogo criado com {} jogadores:".format(len(self.players)))
+        print(*self.players, sep=", ")
+
+
+    def bet(self, current_score = None):
+        if not current_score:
+            current_score = self.gameround['score']
+        if current_score == 1:
+            return "Truco!", 3
+        if current_score == 3:
+            return "Seis!", 6
+        if current_score == 6:
+            return "Nove!", 9
+        if current_score == 9:
+            return "Doze!", 12
 
     def truco(self):
         """
@@ -136,16 +164,20 @@ class TrucoGame:
         print("Tudo misturado! Sem maço!")
         print("")
         print("Distribuindo as cartas...")
-        #Muda a ordem dos Jogadores, quem dá cartá é pé:
-        self.players.sort(key=self.players[0].__eq__)
+        # Change order of the players - quem dá cartá é pé:
+        self.players.append(self.players.pop(0))
         self.deal()
         print("\nVamos jogar!")
-        for player in self.players:
-            print("{}, sua vez...".format(player.name))
-            self.play(player)
-        else:
-            print("Essa é a última mão... vamos determinar o vencedor...")
-            self.find_winner()
+        gameround = True
+        while gameround == True:
+
+            for player in self.players:
+                print("\n{} - Time {}, sua vez...".format(player.name, self.teams[player]))
+                self.play(player)
+            else:
+                print("\nTodos jogaram!?")
+                self.find_winner()
+                # Todo: After winner found, re-order players - next player after the winner plays first.
 
     def deal(self):
         """
@@ -154,9 +186,12 @@ class TrucoGame:
         for _ in range(3):
             for p in self.players:
                 newcard = self.deck.draw()
-                p.hand.append(newcard)
+                p.hand.add_single(newcard)
                 # This will not be here in the future!
                 print("Jogador {} recebeu a carta {}.".format(p.name, str(newcard)))
+            print("\n")
+        self.flop = self.deck.draw()
+        print("Vira: {}".format(self.flop))
 
     def find_winner(self):
         """
@@ -176,64 +211,78 @@ class TrucoGame:
         except ValueError:
             print("Whoops! Everybody lost!")
 
-    def hit(self, player):
-        """
-        Adds a card to the player's hand and states which card was drawn.
-        """
-        newcard = self.deck.draw()
-        player.hand.append(newcard)
-        print("   Drew the {}.".format(str(newcard)))
 
     def play(self, player):
         """
-        An individual player's turn.
-        If the player's cards are an ace and a ten or court card,
-        the player has a blackjack and wins.
-        If a player's cards total more than 21, the player loses.
-        Otherwise, it takes the sum of their cards and determines whether
-        to hit or stand based on their current score.
         """
-        while True:
-            points = sum_hand(player.hand)
-            if points < 17:
-                print("   Hit.")
-                self.hit(player)
-            elif points == 21:
-                print("   {} wins!".format(player.name))
-                sys.exit(0) # End if someone wins
-            elif points > 21:
-                print("   Bust!")
-                break
-            else:  # Stand if between 17 and 20 (inclusive)
-                print("   Standing at {} points.".format(str(points)))
-                self.scores[player.name] = points
-                break
+        # Todo implement blind draw (esconder)
+        # Show player's hand:
+        options = {}
+        for i, card in enumerate(player.hand):
+            options[i+1] = card.name
+        bet = self.bet()
+        # Give possibility to raise the bet, if not asked by the team before:
+        if self.gameround['last_call'] != self.teams[player]:
+            # increase_bet = input("\nPedir {}?".format(bet[0]))
+            options[len(options)+1] = bet[0]
+        else:
+            print("Você não pode pedir {}...".format(bet[0]))
+        print("Opções:")
+        for key, value in options.items():
+            print("\t", key, ":", value)
+        choice = int(input(player.name + " escolha " + str([*options.keys()])  + ">> "))
+        if choice in options.keys():
+                # Todo: Implement reply from next player.
+            if options[choice] in ['Truco!', 'Seis!', 'Nove!', 'Doze!']:
+                call = self.call_by(player)
+                self.gameround['score'] = bet[1]
+                self.gameround['last_call'] = self.teams[player]
+            else:
+                print("Escolhi uma carta...")
+                card =  player.hand.draw_specific(options[choice])
+        else:
+            print("Vou jogar qualquer uma...")
+            card = player.hand.draw_random()
+        print("{}, jogou: {}".format(player, card))
+        return card
 
-def sum_hand(hand: list):
-    """
-    Converts ranks of cards into point values for scoring purposes.
-    'K', 'Q', and 'J' are converted to 10.
-    'A' is converted to 1 (for simplicity), but if the first hand is an ace
-    and a 10-valued card, the player wins with a blackjack.
-    """
-    vals = [card.rank for card in hand]
-    intvals = []
-    while len(vals) > 0:
-        value = vals.pop()
-        try:
-            intvals.append(int(value))
-        except ValueError:
-            if value in ['K', 'Q', 'J']:
-                intvals.append(10)
-            elif value == 'A':
-                intvals.append(1)  # Keep it simple for the sake of example
-    if intvals == [1, 10] or intvals == [10, 1]:
-        print("   Blackjack!")
-        return(21)
-    else:
-        points = sum(intvals)
-        print("   Current score: {}".format(str(points)))
-        return(points)
+    def call_by(self,player):
+        index = self.players.index(player) + 1
+        if index >= len(self.players):
+            index = 0
+        called = self.players[index]
+        # ToDo: Show only to the player...
+        print("{} diz: {}!!! {} MARRECO!!!".format(player, str(self.bet()[0]).upper(), str(called).upper()))
+
+        print("Sua mão,", called, ":", [card.name for card in called.hand])
+
+        print("Opções:")
+
+        if self.gameround['score'] < 9:
+            print("\t0: Fugir - Perde: {} tento(s)\n\t1: Aceitar - Partida: {} tentos\n\t2: {}".format(self.gameround['score'],self.bet()[1], self.bet(current_score=self.bet()[1])[0]))
+            options = [0, 1, 2]
+        else:
+            options = [0,1]
+            print("\t0: Fugir - Perde: {} tentos\n\t1: Aceitar - Partida: {} tentos".format(self.gameround['score'], self.bet()[1]))
+        valid = True
+        while valid:
+            calling = int(input("{} {}? >>".format(called, options)))
+            if calling in options:
+                if calling == 1:
+                    self.gameround['score'] = self.bet()[1]
+                    print("Valendo:", self.gameround['score'], "tentos")
+                    return # Todo WTF??
+                elif calling == 2:
+                    self.gameround['score'] = self.bet()[1]
+                    print("Valendo:", self.gameround['score'], "tentos")
+                    self.call_by(called)
+                else:
+                    print("Fugiu!!")
+                    print("Valeu:", self.gameround['score'], "tentos")
+                    return "END GAME"
+                valid = False
+
+
 
 
 if __name__ == "__main__":
