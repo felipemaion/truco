@@ -16,47 +16,23 @@ from pyCardDeck.cards import BaseCard
 
 
 class TrucoCard(BaseCard):
-    """
-    Example Poker Card, since Poker is a a deck of Unique cards,
-    we can say that if their name equals, they equal too.
-    """
     def __init__(self, suit: str, rank: str, name: str):
         # Define self.name through BaseCard Class
-        super().__init__("{} de {}".format(name, suit))
-        self.suit = suit
+        super().__init__("{} de {}".format(name, suit[1]))
+        self.suit = suit[0]
+        self.suit_name = suit[1]
         self.rank = rank
     def __eq__(self, other):
         return self.name == other
     def __gt__(self, other):
-        suits = ['Ouros', 'Espadas', 'Copas', 'Paus']
         ranks = ['4', '5', '6', '7', 'Q', 'J', 'K', 'A', '2', '3']
-        rank, suit = 0,0
         # Compare Ranks
         if ranks.index(self.rank) < ranks.index(other.rank):
-            rank = -1
+            return False
         elif ranks.index(self.rank) > ranks.index(other.rank):
-            rank = 1
+            return True
         else:
-            rank = 0
-        # Compare Suits
-        if suits.index(self.suit) < suits.index(other.suit):
-            suit = -1
-        elif suits.index(self.suit) > suits.index(other.suit):
-            suit = 1
-        else:
-            suit = 0
-        return {'rank':rank, 'suit':suit}
-
-
-
-
-    # def __cmp__(self,other):
-    #     if self.value < other.value:
-    #         return -1
-    #     elif self.value > other.value:
-    #         return 1
-    #     else:
-    #         return 0
+            return 0
 
 
 
@@ -68,7 +44,9 @@ def generate_deck(sujo=True) -> List[TrucoCard]:
     :rtype:     List[TrucoCard]
     """
     if sujo:
-        suits = ['Ouros', 'Espadas', 'Copas', 'Paus']
+        # ♠♣♥♦
+        suits = {1: 'Ouros', 2: 'Espadas', 3: 'Copas', 4: 'Paus'}
+        # suits = {1: 'Ouros ♦', 2: 'Espadas ♠', 3: 'Copas ♥', 4: 'Paus ♣'}
         ranks = {'4': 'Quatro',
                  '5': 'Cinco',
                  '6': 'Seis',
@@ -80,7 +58,7 @@ def generate_deck(sujo=True) -> List[TrucoCard]:
                  '2': 'Dois',
                  '3': 'Três'}
     if not sujo:
-        suits = ['Ouros', 'Espadas', 'Copas', 'Paus']
+        suits = {1: 'Ouros', 2: 'Espadas', 3: 'Copas', 4: 'Paus'}
         ranks = {'Q': 'Dama',
                  'J': 'Valete',
                  'K': 'Rei',
@@ -88,26 +66,60 @@ def generate_deck(sujo=True) -> List[TrucoCard]:
                  '2': 'Dois',
                  '3': 'Três'}
     cards = []
-    for suit in suits:
+    for suit in suits.items():
         for rank, name in ranks.items():
             cards.append(TrucoCard(suit=suit,rank=rank,name=name))
     print('Baralho criado para a mesa de Truco')
     return cards
 
 
-#
-# my_truco = pyCardDeck.Deck(generate_deck(),name="Truco Sujo", reshuffle=False)
-# carta1 = my_truco.draw()
-# carta2 = my_truco.draw()
-# carta3 = my_truco.draw_random()
-# carta4 = my_truco.draw_bottom()
-# print(carta1)
-# print(carta2)
-# print(carta3)
-# print(carta4)
-# carta1 > carta2
-# carta1 > carta3
-# carta1 > carta4
+# # ToDo Write the tests for the following:
+# def test_mydeck:
+    # my_truco = pyCardDeck.Deck(generate_deck(),name="Truco Sujo", reshuffle=False)
+    # len(my_truco) == 40 # True
+    # carta0 = my_truco.draw_specific("Três de Ouros")
+    # carta1 = my_truco.draw_specific("Três de Espadas")
+    # carta2 = my_truco.draw_specific("Três de Copas")
+    # carta3 = my_truco.draw_specific("Três de Paus")
+    #
+    # carta4 = my_truco.draw_random()
+    # carta5 = my_truco.draw_bottom()
+    #
+    # carta0.name == "Três de Ouros" # True
+    # carta0.suit == 1 # True
+    # carta0.suit_name == "Ouros" # True
+    #
+    # carta1.name == "Três de Espadas" # True
+    # carta1.suit == 2 # True
+    # carta1.suit_name == "Espadas" # True
+    #
+    # carta2.name == "Três de Copas" # True
+    # carta2.suit == 3 # True
+    # carta2.suit_name == "Copas" # True
+    #
+    # carta3.name == "Três de Paus" # True
+    # carta3.suit == 4 # True
+    # carta3.suit_name == "Paus" # True
+    #
+    # carta1.rank == carta2.rank and carta0.rank == carta3.rank # True
+    # carta1 == carta2 # False
+    # carta1 > carta2 # 0
+    # carta0.suit < carta1.suit #True
+    # carta1.suit < carta2.suit #True
+    # carta2.suit < carta3.suit #True
+    # carta3.suit > carta0.suit #True
+    # carta0 > carta4 # True
+    #
+    # cartas = [carta1, carta2 , carta3, carta4, carta5, carta0]
+    # import random
+    # random.shuffle(cartas)
+    # cartas.sort()
+    # len(my_truco) == 34 # True
+    #
+    # tres = [carta1,carta2,carta3,carta0]
+    # print(*tres, sep= ", ") # Três de Espadas, Três de Copas, Três de Paus, Três de Ouros
+    # tres.sort(key= lambda x: x.suit)
+    # print(*tres, sep= ", ") # Três de Ouros, Três de Espadas, Três de Copas, Três de Paus
 
 
 class Player:
@@ -128,13 +140,31 @@ class TrucoGame:
         self.deck = pyCardDeck.Deck(self.all_cards.copy(),name="Truco Sujo", reshuffle=False)
         self.sujo = sujo
         self.deck_size = len(self.deck)
-        self.manilha = None
+        self.manilha = None # ToDO create a new class RoundGame and move it to there
         if len(players) not in [2,4,6]:
             raise("Erro: Precisa de 2, 4 ou 6 jogadores")
         self.players = players
         self.teams, self.team1, self.team2 = {}, [], []
+        self._teams()
+        self.scores = {1: 0, 2: 0} #team: score
+        # game_roud, cards_round, table... also should be part of the class RoundGame
+        self.game_round = {'score': 1, 'first_round': None, 'second_round':None, 'third_round': None, 'last_bet_call':None}
+        self.cards_round = {}
+        self.table = []
+        # I am sure that ranks_names should not be here... but where?
+        self.ranks_names = {'4': 'Quatro', '5': 'Cinco', '6': 'Seis', '7': 'Sete', 'Q': 'Dama', 'J': 'Valete',
+                            'K': 'Rei', 'A': 'Ás', '2': 'Dois', '3': 'Três'}
+        self._show_table()
+
+    def _show_table(self):
+        print("Jogo criado com {} jogadores. \n\t Mesa disposta:".format(len(self.players)))
+        print("\t", *self.players[:int(len(self.players)/2)][::-1], sep="\t")
+        print("\n")
+        print("\t", *self.players[int(len(self.players)/2):], sep="\t")
+
+    def _teams(self):
         team = 1
-        for player in players:
+        for player in self.players:
             self.teams[player] = team
             if team == 1:
                 self.team1.append(player.name)
@@ -143,15 +173,6 @@ class TrucoGame:
             team += 1
             if team > 2:
                 team = 1
-        self.scores = {1: 0, 2: 0} #team: score
-        self.game_round = {'score': 1, 'first_round': None, 'second_round':None, 'third_round': None, 'last_call':None}
-        self.cards_round = {}
-        self.table = []
-        self.ranks_names = {'4': 'Quatro', '5': 'Cinco', '6': 'Seis', '7': 'Sete', 'Q': 'Dama', 'J': 'Valete',
-                            'K': 'Rei', 'A': 'Ás', '2': 'Dois', '3': 'Três'}
-        print("Jogo criado com {} jogadores:".format(len(self.players)))
-        print(*self.players, sep=", ")
-
 
     def bet(self, current_score = None):
         if not current_score:
@@ -167,20 +188,19 @@ class TrucoGame:
 
     def truco(self):
         """
-
         """
 
         game = True
+        print("\nPreparando...")
         while game:
-            print("Preparando...")
             print("Jogador {} embaralhando...".format(self.players[0]))
             self.deck.shuffle_back()
             if len(self.deck) != self.deck_size:
-                raise("Faltando carta! {}".format(len(self.deck)))
+                raise("Faltando carta! {}!! Pega ladrão!".format(len(self.deck)))
             print("Tudo misturado! Sem maço!")
-            print("")
+            print("Ok... corta... {}".format(self.players[1])) # Bleh!
             print("Distribuindo as cartas...")
-            # Change order of the players - quem dá cartá é pé:
+            # Change order of the players - quem dá carta é pé:
             self.players.append(self.players.pop(0))
             self.deal()
             print("\nVamos jogar!")
@@ -191,10 +211,11 @@ class TrucoGame:
                 for player in self.players:
                     print("\n{} - Time {}, sua vez...".format(player.name, self.teams[player]))
                     played = self.play(player)
-                    # print(played)
+                    # Player, Put the cart on the table:
                     self.table.append(played['card']) if played['card'] != None else None
+                    # This card belongs to the player.
                     self.cards_round[player] = played
-                    # print(self.cards_round)
+                    # Does anybody run away of this match? Example: when increasing the bet?
                     if played['round_over'] == True:
                         print("Fim dessa partida!")
                         game_round = False
@@ -203,24 +224,25 @@ class TrucoGame:
                     print("\nTodos jogaram!?")
                     self.find_winner()
                     # Todo: After winner found, re-order players - next player after the winner plays first.
+            # All Players give all cards back to the deck:
             for player in self.players:
                 while not player.hand.empty:
                     card = player.hand.draw()
-                    # print(card)
                     self.deck.discard(card)
             # Remove any empty entry in self.table:
             self.table = [x for x in self.table if x is not None]
+            # Get cards on the table:
             for card in self.table:
                 self.deck.discard(card)
-            # print(self.flop)
+            # Get the Flop and put in the deck:
             self.deck.discard(self.flop)
             # Reset Table and etc
             self.flop = None
             self.table = []
             self.game_round = {'score': 1, 'first_round': None, 'second_round': None, 'third_round': None,
-                              'last_call': None}
-
-            print("Cartas no maço: {}, cartas na mesa: {}".format(len(self.deck), self.deck.discarded))
+                              'last_bet_call': None}
+            # Check quantity of cards:
+            # print("Cartas no maço: {}, cartas na mesa: {}".format(len(self.deck), self.deck.discarded))
             print("Placar: \n\tTime1: {} x {} :Time2".format(self.scores[1],self.scores[2]))
             if self.scores[1] >= 12:
                 game = False
@@ -242,7 +264,6 @@ class TrucoGame:
                 p.hand.add_single(newcard)
                 # This will not be here in the future!
                 # print("Jogador {} recebeu a carta {}.".format(p.name, str(newcard)))
-            print("\n")
         self.flop = self.deck.draw()
         self.shackles(self.flop)
         print("Vira: {}".format(self.flop))
@@ -253,10 +274,20 @@ class TrucoGame:
         Finds the highest card, then finds which player won, gives points to the team.
         """
         # Todo
+        winner = None
+        manilhas = {}
+        cartas = []
         print("Manda: ", self.manilha)
         for player, play in self.cards_round.items():
-            print("Jogador: {} jogou {}".format(player, play['card'].rank)) if play['visible'] == True else None
+            cartas.append(play['card'])
+            print("Jogador: {} jogou {}".format(player, play['card'])) if play['visible'] == True else None
+            # Looking for shackles in the current table
+            if play['card'].rank == self.manilha:
+                print("Opá!! Temos uma manilha! {} jogada por {}".format(play['card'].suit, player))
+                manilhas[player] = play['card']
 
+        # cartas.sort() # Sort is not working... everytime it change the order..
+        print(cartas)
         print("Whoops! Everybody lost!")
 
 
@@ -274,7 +305,7 @@ class TrucoGame:
             card = None
             bet = self.bet()
             # Give possibility to raise the bet, if not asked by the team before:
-            if self.game_round['last_call'] != self.teams[player]:
+            if self.game_round['last_bet_call'] != self.teams[player]:
                 # increase_bet = input("\nPedir {}?".format(bet[0]))
                 options['0'] = bet[0]
             else:
@@ -290,7 +321,7 @@ class TrucoGame:
                 if choice == '0': # Raise Bet!
                     call = self.call_by(player) # Ask other player
                     if not call: # Challange not accepted. End round!
-                        winner = self.game_round['last_call'] # Last one to challange wins.
+                        winner = self.game_round['last_bet_call'] # Last one to challange wins.
                         self.scores[winner] += self.game_round['score']
                         points = self.scores[winner]
                         print("Vencedor da rodada time: {} total: {} ".format(winner,points))
@@ -326,7 +357,7 @@ class TrucoGame:
             index = 0
         called = self.players[index]
         # ToDo: Show only to the player...
-        self.game_round['last_call'] = self.teams[player]
+        self.game_round['last_bet_call'] = self.teams[player]
         print("{} diz: {}!!! {} MARRECO!!!".format(player, str(self.bet()[0]).upper(), str(called).upper()))
 
         print("Sua mão,", called, ":", [card.name for card in called.hand])
@@ -377,4 +408,6 @@ class TrucoGame:
 if __name__ == "__main__":
     game = TrucoGame([Player("Felipe"), Player("Marcos"), Player("Pedro"),
         Player("Jose")])
+    # game = TrucoGame([Player("Felipe"), Player("Marcos"), Player("Pedro"),
+    #     Player("Jose"), Player('Bruno'), Player('Aline')])
     game.truco()
