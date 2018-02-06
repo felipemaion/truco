@@ -10,6 +10,7 @@ Started: 31/jan/2018
 #### pip install pyCardDeck
 
 # import sys
+import random
 import pyCardDeck
 from typing import List
 from pyCardDeck.cards import BaseCard
@@ -24,6 +25,15 @@ class TrucoCard(BaseCard):
         self.rank = rank
     def __eq__(self, other):
         return self.name == other
+    def __ge__(self, other):
+        ranks = ['4', '5', '6', '7', 'Q', 'J', 'K', 'A', '2', '3']
+        # Compare Ranks
+        if ranks.index(self.rank) < ranks.index(other.rank):
+            return False
+        elif ranks.index(self.rank) >= ranks.index(other.rank):
+            return True
+        else:
+            return 0
     def __gt__(self, other):
         ranks = ['4', '5', '6', '7', 'Q', 'J', 'K', 'A', '2', '3']
         # Compare Ranks
@@ -62,21 +72,20 @@ def generate_deck(sujo=True) -> List[TrucoCard]:
     for suit in suits.items():
         for rank, name in ranks.items():
             cards.append(TrucoCard(suit=suit,rank=rank,name=name))
-    print('Baralho criado para a mesa de Truco')
     return cards
 
 
 # # ToDo Write the tests for the following:
 # def test_mydeck:
-my_truco = pyCardDeck.Deck(generate_deck(),name="Truco Sujo", reshuffle=False)
-len(my_truco) == 40 # True
-carta0 = my_truco.draw_specific("Três de Ouros")
-carta1 = my_truco.draw_specific("Três de Espadas")
-carta2 = my_truco.draw_specific("Três de Copas")
-carta3 = my_truco.draw_specific("Três de Paus")
-
-carta4 = my_truco.draw_random()
-carta5 = my_truco.draw_bottom()
+    # my_truco = pyCardDeck.Deck(generate_deck(),name="Truco Sujo", reshuffle=False)
+    # len(my_truco) == 40 # True
+    # carta0 = my_truco.draw_specific("Três de Ouros")
+    # carta1 = my_truco.draw_specific("Três de Espadas")
+    # carta2 = my_truco.draw_specific("Três de Copas")
+    # carta3 = my_truco.draw_specific("Três de Paus")
+    #
+    # carta4 = my_truco.draw_random()
+    # carta5 = my_truco.draw_bottom()
     #
     # carta0.name == "Três de Ouros" # True
     # carta0.suit == 1 # True
@@ -104,7 +113,6 @@ carta5 = my_truco.draw_bottom()
     # carta0 > carta4 # True
     #
     # cartas = [carta1, carta2 , carta3, carta4, carta5, carta0]
-    # import random
     # random.shuffle(cartas)
     # cartas.sort()
     # len(my_truco) == 34 # True
@@ -137,7 +145,7 @@ class TrucoGame:
             raise("Erro: Precisa de 2, 4 ou 6 jogadores")
         self.players = players
         self.teams, self.team1, self.team2 = {}, [], []
-        self.teams()
+        self._teams()
         self.scores = {1: 0, 2: 0} #team: score
         # game_roud, cards_round, table... also should be part of the class RoundGame
         # self.game_round = {'score': 1, 'first_round': None, 'second_round':None, 'third_round': None, 'last_bet_call':None}
@@ -146,19 +154,22 @@ class TrucoGame:
         # I am sure that ranks_names should not be here... but where?
         self.ranks_names = ranks_names()
         self.show_table()
-    def createGameRound(self, dealer= None):
+    def createGameRound(self, dealer):
         return TrucoGame.GameRound(self, dealer)
 
     class GameRound: #also known as Rodada ou Partida.
-        def __init__(self, game: TrucoGame, dealer: Player):
+        def __init__(self, game, dealer: Player):
+            self.game = game
             self.dealer = dealer
             self.flop = None
             self.manilha = None
             self.round_score = 1
             self.last_bet_call = None
-            self.deck = deck
-            self.game = game
+            self.deck = game.deck
             self.all_cards = generate_deck(game.sujo)
+            self.players = game.players
+            self.teams = game.teams
+
 
         def bet(self, current_score=None):
             if not current_score:
@@ -181,12 +192,13 @@ class TrucoGame:
                     newcard = self.deck.draw()
                     p.hand.add_single(newcard)
                     # This will not be here in the future!
-                    # print("Jogador {} recebeu a carta {}.".format(p.name, str(newcard)))
+                    print("Jogador {} recebeu a carta {}.".format(p.name, str(newcard)))
+                print("\n")
             # Should be in the GameRound:
             self.flop = self.deck.draw()
             self.shackles(self.flop)
             print("Vira: {}".format(self.flop))
-            print("Manilha: ", self.manilha, " - ", self.ranks_names[self.manilha])
+            print("Manilha: ", self.manilha, " - ", ranks_names()[self.manilha])
 
         def find_winner(self):  # This also should be part of a new Class GameRound
             """
@@ -241,43 +253,7 @@ class TrucoGame:
             self.manilha = dictionary[card.rank]
             return dictionary[card.rank]
 
-
-    def show_table(self):
-        print("Jogo criado com {} jogadores. \n\t Mesa disposta:".format(len(self.players)))
-        print("\t", *self.players[:int(len(self.players)/2)][::-1], sep="\t")
-        print("\n")
-        print("\t", *self.players[int(len(self.players)/2):], sep="\t")
-
-    def teams(self):
-        team = 1
-        for player in self.players:
-            self.teams[player] = team
-            if team == 1:
-                self.team1.append(player.name)
-            else:
-                self.team2.append(player.name)
-            team += 1
-            if team > 2:
-                team = 1
-
-
-    def truco(self):
-        """
-        """
-
-        game = True
-        print("\nPreparando...")
-        while game:
-            print("Jogador {} embaralhando...".format(self.players[0]))
-            self.deck.shuffle_back()
-            if len(self.deck) != self.deck_size:
-                raise("Faltando carta! {}!! Pega ladrão!".format(len(self.deck)))
-            print("Tudo misturado! Sem maço!")
-            print("Ok... corta... {}".format(self.players[1])) # Bleh!
-            print("Distribuindo as cartas...")
-            # Change order of the players - quem dá carta é pé:
-            self.change_player_order()
-            self.deal()
+        def play(self):
             print("\nVamos jogar!")
             game_round = True
             self.table = []
@@ -285,7 +261,7 @@ class TrucoGame:
 
                 for player in self.players:
                     print("\n{} - Time {}, sua vez...".format(player.name, self.teams[player]))
-                    played = self.play(player)
+                    played = self.game.play(player) # Todo: Who should play is the PLAYER!!!
                     # Player, Put the cart on the table:
                     self.table.append(played['card']) if played['card'] != None else None
                     # This card belongs to the player.
@@ -295,7 +271,7 @@ class TrucoGame:
                         print("Fim dessa partida!")
                         game_round = False
                         break
-                else: # No more players...
+                else:  # No more players...
                     print("\nTodos jogaram!?")
                     self.find_winner()
                     # Todo: After winner found, re-order players - next player after the winner plays first.
@@ -314,6 +290,79 @@ class TrucoGame:
             # Reset Table and etc
             self.flop = None
             self.table = []
+
+
+    def show_table(self):
+        print("Jogo criado com {} jogadores. \n\t Mesa disposta:".format(len(self.players)))
+        print("\t", *self.players[:int(len(self.players)/2)][::-1], sep="\t")
+        print("\n")
+        print("\t", *self.players[int(len(self.players)/2):], sep="\t")
+
+    def _teams(self):
+        team = 1
+        for player in self.players:
+            self.teams[player] = team
+            if team == 1:
+                self.team1.append(player.name)
+            else:
+                self.team2.append(player.name)
+            team += 1
+            if team > 2:
+                team = 1
+
+    def pick_dealer(self):
+        self.deck.shuffle()
+        dealer = None
+        max_card = self.deck.draw_specific("Quatro de Ouros") # Lowest card for comparison
+        cards = []
+        cards.append(max_card)
+        print("\nQuem sortear a maior carta e naipe começa embaralhando...")
+        for player in self.players:
+            card = self.deck.draw_random()
+            print("\t{} tirou a carta: {}".format(player, card))
+            if card >= max_card:
+                if card.rank == max_card.rank:
+                    if card.suit > max_card.suit:
+                        dealer = player
+                        max_card = card
+                else:
+                    dealer = player
+                    max_card = card
+            cards.append(card)
+        # Give cards back to the deck:
+        self.dischard_cards(cards)
+        self.deck.shuffle_back()
+        print("\nQuem começa é o {}".format(dealer))
+        return dealer
+
+    def dischard_cards(self,cards):
+        for card in cards:
+            self.deck.discard(card)
+
+    def truco(self):
+        """
+        """
+
+        game = True
+        print("\nPreparando...")
+        while game:
+            initial_dealer = self.pick_dealer()
+            self.change_player_order(initial_dealer)
+            print("Jogador {} embaralhando...".format(self.players[0]))
+            self.deck.shuffle_back()
+            if len(self.deck) != self.deck_size:
+                raise("Faltando carta! {}!! Pega ladrão!".format(len(self.deck)))
+            print("Tudo misturado! Sem maço!")
+            print("Ok... corta... {}".format(self.players[-1])) # Bleh!
+            print("Distribuindo as cartas...")
+            # Change order of the players - quem dá carta é pé:
+            # self.change_player_order() # This should not be here... this is GameRound rule.
+            # Todo createGameRound
+            game_round = self.createGameRound(initial_dealer)
+            game_round.deal()
+            game_round.play()
+            # self.deal() # Also not belongs here.
+
             self.game_round = {'score': 1, 'first_round': None, 'second_round': None, 'third_round': None,
                               'last_bet_call': None}
             # Check quantity of cards:
