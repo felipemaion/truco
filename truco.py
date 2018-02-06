@@ -154,6 +154,7 @@ class TrucoGame:
         # I am sure that ranks_names should not be here... but where?
         self.ranks_names = ranks_names()
         self.show_table()
+
     def createGameRound(self, dealer):
         return TrucoGame.GameRound(self, dealer)
 
@@ -169,6 +170,7 @@ class TrucoGame:
             self.all_cards = generate_deck(game.sujo)
             self.players = game.players
             self.teams = game.teams
+            self.cards_round = {}
 
 
         def bet(self, current_score=None):
@@ -185,20 +187,28 @@ class TrucoGame:
 
         def deal(self):
             """
-            Deals three cards to each player.
+            The dealer gets the deck and deals 3 cards to each player.
+            Starting to the player at his right hand.
+            The dealer is the last to receive the card.
             """
+            self.give_deck_to(self.dealer)
+            # Three cards to each player:
             for _ in range(3):
-                for p in self.players:
+                for player in self.players:
                     newcard = self.deck.draw()
-                    p.hand.add_single(newcard)
+                    player.hand.add_single(newcard)
                     # This will not be here in the future!
-                    print("Jogador {} recebeu a carta {}.".format(p.name, str(newcard)))
-                print("\n")
-            # Should be in the GameRound:
+                    #print("Jogador {} \trecebeu uma carta \t--SEGREDO:({}).".format(player.name, str(newcard)))
+                #print("\n")
             self.flop = self.deck.draw()
             self.shackles(self.flop)
             print("Vira: {}".format(self.flop))
             print("Manilha: ", self.manilha, " - ", ranks_names()[self.manilha])
+
+        def give_deck_to(self, initial=None):
+            if initial:  # This is only for GameRound
+                while self.players[-1] != initial:
+                    self.players.append(self.players.pop(0))
 
         def find_winner(self):  # This also should be part of a new Class GameRound
             """
@@ -253,15 +263,15 @@ class TrucoGame:
             self.manilha = dictionary[card.rank]
             return dictionary[card.rank]
 
-        def play(self):
-            print("\nVamos jogar!")
+        def start(self):
+            # print("\nVamos jogar!")
             game_round = True
             self.table = []
             while game_round == True:
 
                 for player in self.players:
                     print("\n{} - Time {}, sua vez...".format(player.name, self.teams[player]))
-                    played = self.game.play(player) # Todo: Who should play is the PLAYER!!!
+                    played = self.play(player) # Todo: Who should play is the PLAYER!!!
                     # Player, Put the cart on the table:
                     self.table.append(played['card']) if played['card'] != None else None
                     # This card belongs to the player.
@@ -291,6 +301,103 @@ class TrucoGame:
             self.flop = None
             self.table = []
 
+        def play(self, player):
+            """
+            """
+            # Todo implement blind draw (esconder)
+            # Show player's hand:
+            valid = True
+            while valid:
+                options = {}
+                round_over = False
+                for i, card in enumerate(player.hand):
+                    options[str(i + 1)] = card.name
+                card = None
+                bet = self.bet()
+                # Give possibility to raise the bet, if not asked by the team before:
+                if self.last_bet_call != self.teams[player]:
+                    # increase_bet = input("\nPedir {}?".format(bet[0]))
+                    options['0'] = bet[0]
+                else:
+                    print("Você não pode pedir {}...".format(bet[0]))
+                print("Opções:")
+                for key, value in options.items():
+                    print("\t", key, ":", value)
+                    # Todo: If it is not first round.
+                    print("\t \t{}{} : Esconde a carta {}".format(key, key, value)) if key != '0' else None
+
+                choice = input(player.name + " escolha " + str([*options.keys()]) + ">> ")
+                if choice[0] in options.keys():
+                    if choice == '0':  # Raise Bet!
+                        call = self.call_by(player)  # Ask other player
+                        if not call:  # Challange not accepted. End round!
+                            winner = self.last_bet_call  # Last one to challange wins.
+                            self.game.scores[winner] += self.round_score
+                            points = self.game.scores[winner]
+                            print("Vencedor da rodada time: {} total: {} ".format(winner, points))
+                            return {'card': None, 'visible': False, 'round_over': True}
+
+                        valid = True
+                    else:
+                        if len(choice) == 1:
+                            print("{} escolheu uma carta...".format(player))
+                            card = player.hand.draw_specific(options[choice[0]])
+                            valid = False
+                            visible = True
+                        elif choice[1] == str(choice[0]):
+                            print("{} ESCONDEU uma carta...".format(player))
+                            card = player.hand.draw_specific(options[choice[0]])
+                            valid = False
+                            visible = False
+                        else:
+                            valid = True
+
+                else:
+                    print("Vou jogar qualquer uma...")
+                    card = player.hand.draw_random()
+                    visible = True
+                    valid = False
+            print("{}, jogou: {}".format(player, card if visible else None))
+            return {'card': card, 'visible': visible, 'round_over': round_over}
+
+        def call_by(self, player):
+            index = self.players.index(player) + 1
+            if index >= len(self.players):
+                index = 0
+            called = self.players[index]
+            # ToDo: Show only to the player...
+            self.last_bet_call = self.teams[player]
+            print("{} diz: {}!!! {} MARRECO!!!".format(player, str(self.bet()[0]).upper(), str(called).upper()))
+
+            print("Sua mão,", called, ":", [card.name for card in called.hand])
+
+            print("Opções:")
+
+            if self.round_score < 9:
+                print("\t1: Aceitar - Partida: {} tentos\n\t2: Pedir: {}\n\t0: Fugir - Perde: {} tento(s)".format(
+                    self.bet()[1], self.bet(current_score=self.bet()[1])[0], self.round_score))
+                options = [1, 2, 0]
+            else:
+                options = [1, 0]
+                print("\t1: Aceitar - Partida: {} tentos\n\t0: Fugir - Perde: {} tentos\n".format(self.bet()[1],
+                                                                                                  self.round_score))
+            valid = True
+            while valid:
+                calling = int(input("{} {}? >>".format(called, options)))
+                if calling in options:
+                    if calling == 1:
+                        self.round_score = self.bet()[1]
+                        print("Valendo:", self.round_score, "tentos")
+                        return True  # Todo WTF??
+                    elif calling == 2:
+                        self.round_score = self.bet()[1]
+                        print("Valendo:", self.round_score, "tentos")
+                        return self.call_by(called)
+                    else:
+                        print("Fugiu!!")
+                        print("Valeu:", self.round_score, "tentos")
+                        return False
+                    # valid = False
 
     def show_table(self):
         print("Jogo criado com {} jogadores. \n\t Mesa disposta:".format(len(self.players)))
@@ -345,9 +452,10 @@ class TrucoGame:
 
         game = True
         print("\nPreparando...")
+        initial_dealer = self.pick_dealer()
+        self.change_player_order(initial_dealer)
         while game:
-            initial_dealer = self.pick_dealer()
-            self.change_player_order(initial_dealer)
+
             print("Jogador {} embaralhando...".format(self.players[0]))
             self.deck.shuffle_back()
             if len(self.deck) != self.deck_size:
@@ -360,11 +468,12 @@ class TrucoGame:
             # Todo createGameRound
             game_round = self.createGameRound(initial_dealer)
             game_round.deal()
-            game_round.play()
+            game_round.start()
             # self.deal() # Also not belongs here.
-
-            self.game_round = {'score': 1, 'first_round': None, 'second_round': None, 'third_round': None,
-                              'last_bet_call': None}
+            self.change_player_order()  # move deck to next player
+            # Remove this crap from here:
+            #self.game_round = {'score': 1, 'first_round': None, 'second_round': None, 'third_round': None,
+            #                  'last_bet_call': None}
             # Check quantity of cards:
             # print("Cartas no maço: {}, cartas na mesa: {}".format(len(self.deck), self.deck.discarded))
             print("Placar: \n\tTime1: {} x {} :Time2".format(self.scores[1],self.scores[2]))
@@ -384,109 +493,13 @@ class TrucoGame:
 
 
 
-    def change_player_order(self, winner=None):
+    def change_player_order(self, initial=None):
         self.players.append(self.players.pop(0))
-        if winner: # This is only for GameRound
-            while self.players[0] != winner:
+        if initial: # This is only for GameRound
+            while self.players[0] != initial:
                 self.players.append(self.players.pop(0))
 
 
-    def play(self, player):
-        """
-        """
-        # Todo implement blind draw (esconder)
-        # Show player's hand:
-        valid = True
-        while valid:
-            options = {}
-            round_over = False
-            for i, card in enumerate(player.hand):
-                options[str(i+1)] = card.name
-            card = None
-            bet = self.bet()
-            # Give possibility to raise the bet, if not asked by the team before:
-            if self.game_round['last_bet_call'] != self.teams[player]:
-                # increase_bet = input("\nPedir {}?".format(bet[0]))
-                options['0'] = bet[0]
-            else:
-                print("Você não pode pedir {}...".format(bet[0]))
-            print("Opções:")
-            for key, value in options.items():
-                print("\t", key, ":", value)
-                # Todo: If it is not first round.
-                print("\t \t{}{} : Esconde a carta {}".format(key,key, value)) if key != '0' else None
-
-            choice = input(player.name + " escolha " + str([*options.keys()])  + ">> ")
-            if choice[0] in options.keys():
-                if choice == '0': # Raise Bet!
-                    call = self.call_by(player) # Ask other player
-                    if not call: # Challange not accepted. End round!
-                        winner = self.game_round['last_bet_call'] # Last one to challange wins.
-                        self.scores[winner] += self.game_round['score']
-                        points = self.scores[winner]
-                        print("Vencedor da rodada time: {} total: {} ".format(winner,points))
-                        return {'card': None, 'visible': False, 'round_over': True}
-
-
-                    valid = True
-                else:
-                    if len(choice) == 1:
-                        print("{} escolheu uma carta...".format(player))
-                        card =  player.hand.draw_specific(options[choice[0]])
-                        valid = False
-                        visible = True
-                    elif choice[1] == str(choice[0]):
-                        print("{} ESCONDEU uma carta...".format(player))
-                        card =  player.hand.draw_specific(options[choice[0]])
-                        valid = False
-                        visible = False
-                    else:
-                        valid = True
-
-            else:
-                print("Vou jogar qualquer uma...")
-                card = player.hand.draw_random()
-                visible = True
-                valid = False
-        print("{}, jogou: {}".format(player, card if visible else None))
-        return {'card':card, 'visible':visible, 'round_over':round_over}
-
-    def call_by(self,player):
-        index = self.players.index(player) + 1
-        if index >= len(self.players):
-            index = 0
-        called = self.players[index]
-        # ToDo: Show only to the player...
-        self.game_round['last_bet_call'] = self.teams[player]
-        print("{} diz: {}!!! {} MARRECO!!!".format(player, str(self.bet()[0]).upper(), str(called).upper()))
-
-        print("Sua mão,", called, ":", [card.name for card in called.hand])
-
-        print("Opções:")
-
-        if self.game_round['score'] < 9:
-            print("\t1: Aceitar - Partida: {} tentos\n\t2: Pedir: {}\n\t0: Fugir - Perde: {} tento(s)".format(self.bet()[1], self.bet(current_score=self.bet()[1])[0], self.game_round['score']))
-            options = [1, 2, 0]
-        else:
-            options = [1, 0]
-            print("\t1: Aceitar - Partida: {} tentos\n\t0: Fugir - Perde: {} tentos\n".format(self.bet()[1],self.game_round['score'] ))
-        valid = True
-        while valid:
-            calling = int(input("{} {}? >>".format(called, options)))
-            if calling in options:
-                if calling == 1:
-                    self.game_round['score'] = self.bet()[1]
-                    print("Valendo:", self.game_round['score'], "tentos")
-                    return True# Todo WTF??
-                elif calling == 2:
-                    self.game_round['score'] = self.bet()[1]
-                    print("Valendo:", self.game_round['score'], "tentos")
-                    return self.call_by(called)
-                else:
-                    print("Fugiu!!")
-                    print("Valeu:", self.game_round['score'], "tentos")
-                    return False
-                #valid = False
 
 
 
