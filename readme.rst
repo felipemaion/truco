@@ -22,8 +22,6 @@ python truco.py
 
 Or just create a new one as shown at the very last lines of the truco.py file.
 
-Just go with:
-
 .. code-block:: python
     from truco import *
     game = TrucoGame([Player("Felipe"), Player("iScreE4m"), Player("Pedro"), Player("Vitor")])
