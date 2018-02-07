@@ -22,8 +22,7 @@ python truco.py
 
 Or just create a new one as shown at the very last lines of the truco.py file.
 
-Just go with::
-
+Just go with:
 
 .. code-block:: python
     from truco import *
@@ -31,8 +30,10 @@ Just go with::
     game.truco()
   
 
-ToDo::
+ToDo:
 -------
 1- Implement to play online (today all players at the same terminal is not smart!)
+
 2- Implement Artificial Inteligence.
+
 3- Improve readability of the code.
