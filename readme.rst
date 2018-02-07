@@ -13,18 +13,26 @@ You will need to install the package for the Deck of cards::
     pip install pyCardDeck
     
 
-Made and shared at Github (https://github.com/iScrE4m/pyCardDeck) by iScrE4m
+        (This library made and shared at Github (https://github.com/iScrE4m/pyCardDeck) by iScrE4m)
 
 
 After that you can run the pre-loaded game (4 players)::
 
 python truco.py
 
-Or just create a new one as shown at the very last lines of the truco.py file:
+Or just create a new one as shown at the very last lines of the truco.py file.
+
+Just go with::
 
 
 .. code-block:: python
-    game = TrucoGame([Player("Felipe"), Player("iScreE4m")])
+    from truco import *
+    game = TrucoGame([Player("Felipe"), Player("iScreE4m"), Player("Pedro"), Player("Vitor")])
     game.truco()
   
 
+ToDo::
+-------
+1- Implement to play online (today all players at the same terminal is not smart!)
+2- Implement Artificial Inteligence.
+3- Improve readability of the code.
