@@ -28,6 +28,8 @@ Or just create a new one as shown at the very last lines of the truco.py file.
     game = TrucoGame([Player("Felipe"), Player("iScreE4m"), Player("Pedro"), Player("Vitor")])
     game.truco()
   
+  
+Code is in English, but Game is in Portuguese. 
 
 ToDo:
 -------
