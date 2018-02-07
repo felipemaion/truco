@@ -12,7 +12,8 @@ You will need to install the package for the Deck of cards::
 
     pip install pyCardDeck
     
-    [This Deck of Cards library was made and shared at Github (https://github.com/iScrE4m/pyCardDeck) by iScrE4m]
+
+[This Deck of Cards library was made and shared at Github (https://github.com/iScrE4m/pyCardDeck) by iScrE4m]
 
 
 After that you can run the pre-loaded game (4 players)::
