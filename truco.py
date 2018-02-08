@@ -103,6 +103,7 @@ class TrucoGame:
         print("\nPreparando...")
         initial_dealer = self.pick_dealer()
         self.change_player_order(initial_dealer)
+        all_dealers = []
         while game:
 
             print("Jogador {} embaralhando...".format(self.players[0]))
@@ -112,13 +113,18 @@ class TrucoGame:
             print("Tudo misturado! Sem maço!")
             print("Ok... corta... {}".format(self.players[-1])) # Bleh!
             print("Distribuindo as cartas...")
+            all_dealers.append(initial_dealer.name)
             game_round = self.createGameRound(initial_dealer)
             game_round.deal()
             game_round.start()
-            self.change_player_order()  # move deck to next player
+            print("======================")
+            initial_dealer = self.change_player_order()  # move deck to next player
             # Check quantity of cards:
             # print("Cartas no maço: {}, cartas na mesa: {}".format(len(self.deck), self.deck.discarded))
             print("Placar: \n\tTime1: {} x {} :Time2".format(self.scores[1],self.scores[2]))
+            print("======================")
+
+            print(all_dealers)
             if self.scores[1] >= 12:
                 game = False
                 print("Fim de Jogo!!")
@@ -135,6 +141,7 @@ class TrucoGame:
         if initial: # This is only for GameRound
             while self.players[0] != initial:
                 self.players.append(self.players.pop(0))
+        return self.players[0]
 
 
 
@@ -148,7 +155,7 @@ class TrucoGame:
             self.last_bet_call = None
             self.deck = game.deck
             self.all_cards = generate_deck(game.sujo)
-            self.players = game.players
+            self.players = game.players.copy()
             self.teams = game.teams
             self.cards_round = {}
             self.winners = [] # Who won each turn of the round 3/3
@@ -292,8 +299,7 @@ class TrucoGame:
                 self.next_to_play(winner)
             else:
                 self.winners.append(winner)
-            # team1, team2, teams = 0, 0, []
-            print(self.winners)
+            #print(self.winners) # debug helping..
             if self.count_round == 1:
                 return True # Keep playing guys.
 
@@ -463,11 +469,24 @@ class TrucoGame:
 
 
 if __name__ == "__main__":
-    game = TrucoGame([Player("Felipe"), Player("Marcos"), Player("Pedro"),
-        Player("Jose")])
-    game.truco()
-    # game = TrucoGame([Player("Felipe"), Player("Marcos"), Player("Pedro"),
-    #     Player("Jose"), Player('Bruno'), Player('Aline')])
+    valid = True
+    while valid:
+        try:
+            option = int(input("Jogo para 2, 4 ou 6 Jogadores? [2, 4, 6]>> "))
+        except:
+            continue
+        if option in [2,4,6]:
+            if option == 6:
+                game = TrucoGame([Player("Felipe"), Player("Marcos"), Player("Pedro"), Player("Jose"),
+                                  Player("Bruno"), Player("Ivo")])
+                valid = False
+            if option == 4:
+                game = TrucoGame([Player("Felipe"), Player("Marcos"), Player("Pedro"), Player("Jose")])
+                valid = False
+            if option == 2:
+                game = TrucoGame([Player("Felipe"), Player("Pedro")])
+                valid = False
+            game.truco()
 
 
 

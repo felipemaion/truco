@@ -1,3 +1,5 @@
+__py*
+_trial*
 blackjack.py
 heart*.py
 poker.py
