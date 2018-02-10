@@ -15,7 +15,7 @@ You will need to install the package for the Deck of cards::
 
 [This Deck of Cards library was made and shared at Github (https://github.com/iScrE4m/pyCardDeck) by iScrE4m]
 
-
+Now, clone or download this project to a folder.
 After that you can run the pre-loaded game (4 players)::
 
 python truco.py

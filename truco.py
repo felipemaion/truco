@@ -119,12 +119,12 @@ class TrucoGame:
             game_round.start()
             print("======================")
             initial_dealer = self.change_player_order()  # move deck to next player
-            # Check quantity of cards:
-            # print("Cartas no maço: {}, cartas na mesa: {}".format(len(self.deck), self.deck.discarded))
-            print("Placar: \n\tTime 1\t x\t Time 2 \n\t\t{}\t x\t {}".format(self.scores[1],self.scores[2]))
+            print("Placar: \n")
+            print("\tTime 1\t x\t Time 2")
+            print(" \t{}\t x\t {}".format(self.scores[1],self.scores[2]))
             print("======================")
 
-            # print(all_dealers) # Debuging help
+            print(all_dealers) # Debuging help
             if self.scores[1] >= 12:
                 game = False
                 print("Fim de Jogo!!")
